@@ -1,3 +1,13 @@
+## [1.4.0](https://github.com/kpulka247/portfolio-kpulka/compare/v1.3.9...v1.4.0) (2026-07-17)
+
+### Features
+
+* **skills:** refresh skills showcase ([a666c58](https://github.com/kpulka247/portfolio-kpulka/commit/a666c58e493d5a7a98b0b4047ce1feb021c4a934))
+
+### Performance Improvements
+
+* optimize initial page rendering ([bbc1760](https://github.com/kpulka247/portfolio-kpulka/commit/bbc1760d1ca488400f09cee3bb286df5697aa312))
+
 ## [1.3.9](https://github.com/kpulka247/portfolio-kpulka/compare/v1.3.8...v1.3.9) (2026-04-21)
 
 ### Bug Fixes
