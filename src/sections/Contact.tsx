@@ -36,7 +36,7 @@ const Contact: React.FC = () => {
   };
 
   return (
-    <section id="contact" className="py-10 md:py-20">
+    <section className="py-10 md:py-20">
       <div className="container mx-auto px-4 max-w-3xl text-center">
         <SectionHeader
           title="GET IN TOUCH"

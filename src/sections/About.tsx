@@ -4,13 +4,17 @@ import photo1 from "/static/images/photo1.jpg";
 
 const About: React.FC = () => {
   return (
-    <section id="about" className="py-10 md:py-20">
+    <section className="py-10 md:py-20">
       <div className="container mx-auto px-4 max-w-5xl">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
           <div className="flex justify-center order-2 md:order-1 mt-20 md:mt-0">
             <img
               src={photo1}
               alt="Photo 1"
+              loading="lazy"
+              decoding="async"
+              width={609}
+              height={913}
               className="opacity-80 rounded-xl shadow-lg w-72 h-auto object-cover"
             />
           </div>

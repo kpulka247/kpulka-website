@@ -65,7 +65,7 @@ const Projects: React.FC = () => {
   }, []);
 
   return (
-    <section id="projects" className="py-10 md:py-20">
+    <section className="py-10 md:py-20">
       <div className="container mx-auto px-4 max-w-5xl">
         <div className="grid md:grid-cols-2 gap-10">
           <div className="md:col-span-1 flex flex-col items-center md:items-end">
@@ -99,13 +99,21 @@ const Projects: React.FC = () => {
                           <img
                             src={`https://img.shields.io/chrome-web-store/users/${project.chromeExtensionId}?style=flat-square&label=&color=black`}
                             alt="Chrome Web Store Users"
-                            style={{ height: "20px" }}
+                            loading="lazy"
+                            decoding="async"
+                            width={32}
+                            height={20}
+                            style={{ height: "20px", width: "auto" }}
                           />
                           <BsStarFill size={16} className="mx-1" />
                           <img
                             src={`https://img.shields.io/chrome-web-store/rating/${project.chromeExtensionId}?style=flat-square&label=&color=black`}
-                            alt="Chrome Web Store Users"
-                            style={{ height: "20px" }}
+                            alt="Chrome Web Store rating"
+                            loading="lazy"
+                            decoding="async"
+                            width={32}
+                            height={20}
+                            style={{ height: "20px", width: "auto" }}
                           />
                         </div>
                       )}

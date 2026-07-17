@@ -4,6 +4,7 @@ uniform float uTime;
 uniform sampler2D uTrailTexture;
 uniform vec2 uViewSize;
 uniform vec2 uViewOffset;
+uniform vec2 uTexelSize;
 varying vec2 vUv;
 
 const vec3 COLOR_BACKGROUND = vec3(1.0);
@@ -43,9 +44,8 @@ void main() {
     float deepBackgroundNoise = fbm(textureUv * 2.0 + uTime * 0.02);
     vec3 backgroundColor = mix(COLOR_BACKGROUND_NOISE, COLOR_BACKGROUND, deepBackgroundNoise);
 
-    float offset = 1.0 / 2048.0;
-    float densityRight = texture2D(uTrailTexture, textureUv + vec2(offset, 0.0)).r;
-    float densityUp = texture2D(uTrailTexture, textureUv + vec2(0.0, offset)).r;
+    float densityRight = texture2D(uTrailTexture, textureUv + vec2(uTexelSize.x, 0.0)).r;
+    float densityUp = texture2D(uTrailTexture, textureUv + vec2(0.0, uTexelSize.y)).r;
     vec2 smokeFlow = vec2(densityRight - SMOKEDensity, densityUp - SMOKEDensity);
 
     vec2 colorMaskUv = textureUv * 5.0;

@@ -703,24 +703,38 @@ function useMouseInSection(sectionId: string) {
     const section = document.getElementById(sectionId);
     if (!section) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
+    let frameId: number | null = null;
+    let latestPosition = { clientX: 0, clientY: 0 };
+
+    const updatePosition = () => {
+      frameId = null;
       const rect = section.getBoundingClientRect();
       setPos({
-        x: (e.clientX - rect.left) / rect.width - 0.5,
-        y: (e.clientY - rect.top) / rect.height - 0.5,
+        x: (latestPosition.clientX - rect.left) / rect.width - 0.5,
+        y: (latestPosition.clientY - rect.top) / rect.height - 0.5,
       });
     };
 
+    const handleMouseMove = (e: MouseEvent) => {
+      latestPosition = { clientX: e.clientX, clientY: e.clientY };
+      if (frameId === null) frameId = requestAnimationFrame(updatePosition);
+    };
+
     const handleMouseLeave = () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+        frameId = null;
+      }
       setPos({ x: 0, y: 0 });
     };
 
-    section.addEventListener("mousemove", handleMouseMove);
+    section.addEventListener("mousemove", handleMouseMove, { passive: true });
     section.addEventListener("mouseleave", handleMouseLeave);
 
     return () => {
       section.removeEventListener("mousemove", handleMouseMove);
       section.removeEventListener("mouseleave", handleMouseLeave);
+      if (frameId !== null) cancelAnimationFrame(frameId);
     };
   }, [sectionId, isTouch]);
 
