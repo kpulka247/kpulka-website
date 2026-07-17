@@ -16,7 +16,7 @@ const Skills: React.FC = () => {
   const duplicatedSkills = [...allSkills, ...allSkills];
 
   return (
-    <section id="skills" className="py-10 md:py-20">
+    <section className="py-10 md:py-20">
       <div className="container mx-auto max-w-5xl px-4">
         <div className="text-center">
           <SectionHeader

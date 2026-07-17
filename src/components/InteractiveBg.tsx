@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useEffect } from "react";
+import React, { useRef, useMemo, useEffect, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   ShaderMaterial,
@@ -17,7 +17,13 @@ import vertexShader from "../shaders/vertexShader.glsl";
 import fragmentShader from "../shaders/fragmentShader.glsl";
 import trailShader from "../shaders/trailShader.glsl";
 
-const SIMULATION_RESOLUTION = new Vector2(2048, 2048);
+const getSimulationResolution = (width: number, height: number) =>
+  Math.max(width, height) > 900 ? 1024 : 512;
+
+const getAdaptiveDpr = () => {
+  const hasCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  return hasCoarsePointer ? 1 : Math.min(window.devicePixelRatio, 1.5);
+};
 
 interface SmokePlaneProps {
   mousePosRef: React.MutableRefObject<{ x: number; y: number }>;
@@ -31,6 +37,9 @@ const SmokePlane: React.FC<SmokePlaneProps> = ({
   onReady,
 }) => {
   const { size, viewport, gl } = useThree();
+  const [simulationResolution] = useState(() =>
+    getSimulationResolution(size.width, size.height),
+  );
   const mainMaterialRef = useRef<ShaderMaterial>(null!);
   const lastMousePos = useRef(new Vector2(0.5, 0.5));
   const onReadyCalledRef = useRef(false);
@@ -51,8 +60,8 @@ const SmokePlane: React.FC<SmokePlaneProps> = ({
         : UnsignedByteType;
 
       const fbo1 = new WebGLRenderTarget(
-        SIMULATION_RESOLUTION.x,
-        SIMULATION_RESOLUTION.y,
+        simulationResolution,
+        simulationResolution,
         {
           minFilter: LinearFilter,
           magFilter: LinearFilter,
@@ -65,6 +74,14 @@ const SmokePlane: React.FC<SmokePlaneProps> = ({
       return { read: fbo1, write: fbo2 };
     })(),
   );
+
+  useEffect(() => {
+    const fbo = fboState.current;
+    return () => {
+      fbo.read.dispose();
+      fbo.write.dispose();
+    };
+  }, []);
 
   const trailMaterial = useMemo(() => {
     return new ShaderMaterial({
@@ -81,13 +98,25 @@ const SmokePlane: React.FC<SmokePlaneProps> = ({
     });
   }, []);
 
-  const { trailScene, trailCamera } = useMemo(() => {
+  const { trailScene, trailCamera, trailGeometry } = useMemo(() => {
     const scene = new Scene();
     const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    const quad = new Mesh(new PlaneGeometry(2, 2), trailMaterial);
+    const geometry = new PlaneGeometry(2, 2);
+    const quad = new Mesh(geometry, trailMaterial);
     scene.add(quad);
-    return { trailScene: scene, trailCamera: camera };
+    return {
+      trailScene: scene,
+      trailCamera: camera,
+      trailGeometry: geometry,
+    };
   }, [trailMaterial]);
+
+  useEffect(() => {
+    return () => {
+      trailMaterial.dispose();
+      trailGeometry.dispose();
+    };
+  }, [trailGeometry, trailMaterial]);
 
   const mainUniforms = useMemo(
     () => ({
@@ -95,13 +124,16 @@ const SmokePlane: React.FC<SmokePlaneProps> = ({
       uTrailTexture: { value: fboState.current.read.texture },
       uViewSize: { value: new Vector2(1, 1) },
       uViewOffset: { value: new Vector2(0, 0) },
+      uTexelSize: {
+        value: new Vector2(1 / simulationResolution, 1 / simulationResolution),
+      },
     }),
-    [],
+    [simulationResolution],
   );
 
   useEffect(() => {
     const displayAspect = size.width / size.height;
-    const simulationAspect = SIMULATION_RESOLUTION.x / SIMULATION_RESOLUTION.y;
+    const simulationAspect = 1;
 
     viewSize.current.set(1, 1);
     viewOffset.current.set(0, 0);
@@ -196,16 +228,44 @@ const InteractiveBg: React.FC<InteractiveBgProps> = ({
   isSimulationActive,
   onReady,
 }) => {
+  const [isDocumentVisible, setIsDocumentVisible] = useState(
+    () => !document.hidden,
+  );
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+  const [dpr] = useState(getAdaptiveDpr);
+
+  useEffect(() => {
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handleVisibilityChange = () => setIsDocumentVisible(!document.hidden);
+    const handleMotionChange = (event: MediaQueryListEvent) =>
+      setPrefersReducedMotion(event.matches);
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    motionQuery.addEventListener("change", handleMotionChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      motionQuery.removeEventListener("change", handleMotionChange);
+    };
+  }, []);
+
+  const isActive =
+    isSimulationActive && isDocumentVisible && !prefersReducedMotion;
+
   return (
-    <div className="fixed top-0 left-0 w-full h-full bg-[#ede6e6] z-0 pointer-events-none">
-      <Canvas dpr={[1, 2]}>
-        <SmokePlane
-          mousePosRef={mousePosRef}
-          isSimulationActive={isSimulationActive}
-          onReady={onReady}
-        />
-      </Canvas>
-    </div>
+    <Canvas
+      dpr={dpr}
+      frameloop={isActive ? "always" : "demand"}
+      gl={{ powerPreference: "high-performance" }}
+    >
+      <SmokePlane
+        mousePosRef={mousePosRef}
+        isSimulationActive={isActive}
+        onReady={onReady}
+      />
+    </Canvas>
   );
 };
 export default InteractiveBg;

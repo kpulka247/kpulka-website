@@ -8,7 +8,48 @@ const Navbar: React.FC = () => {
   const [isHoveringTop, setIsHoveringTop] = useState(false);
 
   useEffect(() => {
+    let frameId: number | null = null;
+    let shouldUpdateScroll = true;
+    let latestMouseY = Number.POSITIVE_INFINITY;
+
+    const updateNavigation = () => {
+      frameId = null;
+
+      if (shouldUpdateScroll) {
+        shouldUpdateScroll = false;
+        const scrollTop = window.scrollY;
+        setIsAtTop(scrollTop < 50);
+
+        const docHeight = document.documentElement.scrollHeight;
+        const clientHeight = document.documentElement.clientHeight;
+        const scrollableHeight = docHeight - clientHeight;
+
+        if (scrollableHeight > 0) {
+          const progress = scrollTop / scrollableHeight;
+          setScrollProgress(Math.min(1, Math.max(0, progress)));
+        } else {
+          setScrollProgress(0);
+        }
+      }
+
+      setIsHoveringTop(latestMouseY < 100);
+    };
+
+    const scheduleUpdate = () => {
+      if (frameId === null) frameId = requestAnimationFrame(updateNavigation);
+    };
+
     const handleScroll = () => {
+      shouldUpdateScroll = true;
+      scheduleUpdate();
+    };
+
+    const handleMouseMove = (event: MouseEvent) => {
+      latestMouseY = event.clientY;
+      scheduleUpdate();
+    };
+
+    const initializeNavigation = () => {
       const scrollTop = window.scrollY;
       setIsAtTop(scrollTop < 50);
 
@@ -24,16 +65,14 @@ const Navbar: React.FC = () => {
       }
     };
 
-    const handleMouseMove = (event: MouseEvent) => {
-      setIsHoveringTop(event.clientY < 100);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    window.addEventListener("mousemove", handleMouseMove);
+    initializeNavigation();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("mousemove", handleMouseMove);
+      if (frameId !== null) cancelAnimationFrame(frameId);
     };
   }, []);
 
